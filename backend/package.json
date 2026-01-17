@@ -8,22 +8,16 @@
     "dev": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [
-    "backend",
-    "portfolio",
-    "nodejs",
-    "express"
-  ],
-  "author": "Diego Espinoza",
-  "license": "ISC",
   "dependencies": {
+    "express": "^4.18.2",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.2.1",
-    "express-rate-limit": "^8.2.1",
-    "nodemailer": "^7.0.12"
+    "nodemailer": "^6.9.7",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.11"
-  }
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["portfolio", "backend", "contact-form"],
+  "author": "Diego Espinoza",
+  "license": "MIT"
 }

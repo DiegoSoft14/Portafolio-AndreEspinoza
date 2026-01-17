@@ -13,7 +13,7 @@ export default function Contact() {
   const [submitStatus, setSubmitStatus] = useState({ success: null, message: "" });
 
   // URL del backend (cambia esto según tu entorno)
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000/api";
+  const BACKEND_URL = "http://localhost:5000/api";
 
   const handleSubmit = async (e) => {
     e.preventDefault();

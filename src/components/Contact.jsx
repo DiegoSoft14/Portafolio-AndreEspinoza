@@ -13,7 +13,7 @@ export default function Contact() {
   const [submitStatus, setSubmitStatus] = useState({ success: null, message: "" });
 
   // URL dinámica según el entorno
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000/api";
+const BACKEND_URL = "https://portfolio-backend-noay.onrender.com/api";
 
   const handleSubmit = async (e) => {
     e.preventDefault();

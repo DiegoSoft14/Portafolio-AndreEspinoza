@@ -12,13 +12,15 @@ export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState({ success: null, message: "" });
 
-  // URL del backend (cambia esto según tu entorno)
-  const BACKEND_URL = "http://localhost:5000/api";
+  // URL dinámica según el entorno
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000/api";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitStatus({ success: null, message: "" });
+
+    console.log('Enviando a:', `${BACKEND_URL}/contact/send`);
 
     try {
       const response = await fetch(`${BACKEND_URL}/contact/send`, {
@@ -26,21 +28,31 @@ export default function Contact() {
         headers: {
           'Content-Type': 'application/json',
         },
+        mode: 'cors',
         body: JSON.stringify(formData)
       });
 
+      // Verificar si la respuesta es JSON
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error(`Respuesta no JSON: ${response.status} ${response.statusText}`);
+      }
+
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `Error ${response.status}`);
+      }
 
       if (data.success) {
         setSubmitStatus({
           success: true,
-          message: data.message || '¡Mensaje enviado exitosamente! Te contactaré pronto.'
+          message: data.message || '¡Mensaje enviado exitosamente!'
         });
         
         // Limpiar formulario
         setFormData({ name: "", lastName: "", email: "", phone: "", message: "" });
         
-        // Opcional: Mostrar alerta más elegante
         setTimeout(() => {
           setSubmitStatus({ success: null, message: "" });
         }, 5000);
@@ -56,7 +68,6 @@ export default function Contact() {
         message: error.message || 'Error al enviar el mensaje. Por favor, inténtalo de nuevo.'
       });
       
-      // Ocultar mensaje de error después de 5 segundos
       setTimeout(() => {
         setSubmitStatus({ success: null, message: "" });
       }, 5000);
@@ -65,6 +76,8 @@ export default function Contact() {
       setIsSubmitting(false);
     }
   };
+
+  // Resto del código...
 
   const handleChange = (e) => {
     setFormData({
@@ -243,7 +256,7 @@ export default function Contact() {
                     onChange={handleChange}
                     className="w-full bg-gray-900/50 border border-gray-700 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500/50 transition-all duration-300"
                     placeholder="+51 123 456 789"
-                    pattern="[\+]\d{1,3}[-\s]?\d{1,14}"
+                    pattern="\+\d{1,3}[-\s]?\d{1,14}"
                   />
                 </div>
                 

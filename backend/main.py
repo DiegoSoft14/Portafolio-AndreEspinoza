@@ -1,11 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import os
 from dotenv import load_dotenv
+import resend  # ← AÑADE ESTE IMPORT
+from datetime import datetime  # ← AÑADE ESTE IMPORT
 
 load_dotenv()
 
@@ -36,35 +35,62 @@ class ContactForm(BaseModel):
 
 def enviar_email(form_data):
     try:
-        smtp_user = os.getenv("SMTP_USER")
-        smtp_pass = os.getenv("SMTP_PASS")
-        to_email = os.getenv("TO_EMAIL", smtp_user)
+        # Configurar Resend (NO SMTP)
+        resend.api_key = os.getenv("RESEND_API_KEY")
         
-        msg = MIMEMultipart()
-        msg['From'] = smtp_user
-        msg['To'] = to_email
-        msg['Subject'] = f"Nuevo contacto: {form_data.name}"
+        if not resend.api_key:
+            print("❌ RESEND_API_KEY no configurada en variables de entorno")
+            return False
         
-        cuerpo = f"""
-        Nombre: {form_data.name} {form_data.lastName}
-        Email: {form_data.email}
-        Teléfono: {form_data.phone}
+        # Enviar email con Resend
+        r = resend.Emails.send({
+            "from": "Portfolio de Diego <onboarding@resend.dev>",
+            "to": [os.getenv("TO_EMAIL", "diegoespinoza1405@gmail.com")],
+            "subject": f"📨 Nuevo contacto: {form_data.name}",
+            "html": f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #2563eb;">Nuevo mensaje de contacto</h2>
+                
+                <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="color: #374151;">Información del contacto:</h3>
+                    
+                    <p><strong>👤 Nombre completo:</strong> {form_data.name} {form_data.lastName}</p>
+                    <p><strong>📧 Email:</strong> <a href="mailto:{form_data.email}">{form_data.email}</a></p>
+                    <p><strong>📞 Teléfono:</strong> {form_data.phone if form_data.phone else 'No proporcionado'}</p>
+                    
+                    <div style="margin-top: 20px;">
+                        <strong>💬 Mensaje:</strong>
+                        <div style="background: white; padding: 15px; border-radius: 5px; margin-top: 10px;">
+                            {form_data.message}
+                        </div>
+                    </div>
+                </div>
+                
+                <p style="color: #6b7280; font-size: 14px;">
+                    📅 Enviado el: {datetime.now().strftime("%d/%m/%Y %H:%M")}
+                </p>
+            </div>
+            """,
+            "text": f"""
+            NUEVO MENSAJE DE CONTACTO
+            
+            Nombre: {form_data.name} {form_data.lastName}
+            Email: {form_data.email}
+            Teléfono: {form_data.phone if form_data.phone else 'No proporcionado'}
+            
+            Mensaje:
+            {form_data.message}
+            
+            ---
+            Enviado desde tu portfolio web
+            """
+        })
         
-        Mensaje:
-        {form_data.message}
-        """
-        
-        msg.attach(MIMEText(cuerpo, 'plain'))
-        
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            server.login(smtp_user, smtp_pass)
-            server.send_message(msg)
-        
-        print("✅ Email enviado exitosamente")
+        print(f"✅ Email enviado con Resend. ID: {r['id']}")
         return True
+        
     except Exception as e:
-        print(f"❌ Error email: {e}")
+        print(f"❌ Error Resend: {e}")
         return False
 
 @app.post("/api/contact/send")
@@ -89,5 +115,3 @@ def home():
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
-
-# NO incluyas el if __name__ == "__main__" para Render

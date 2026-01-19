@@ -7,20 +7,26 @@ from email.mime.multipart import MIMEMultipart
 import os
 from dotenv import load_dotenv
 
-# Cargar variables
 load_dotenv()
 
 app = FastAPI()
 
-# CORS
+# Configura CORS para producción
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://portafolio-andre-espinoza.vercel.app",
+    "https://*.vercel.app"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_methods=["POST"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["POST", "GET", "OPTIONS"],
     allow_headers=["*"],
 )
 
-# Modelo
 class ContactForm(BaseModel):
     name: str
     lastName: str = ""
@@ -28,21 +34,17 @@ class ContactForm(BaseModel):
     phone: str = ""
     message: str
 
-# Enviar email
 def enviar_email(form_data):
     try:
-        # Configuración
         smtp_user = os.getenv("SMTP_USER")
         smtp_pass = os.getenv("SMTP_PASS")
         to_email = os.getenv("TO_EMAIL", smtp_user)
         
-        # Crear email
         msg = MIMEMultipart()
         msg['From'] = smtp_user
         msg['To'] = to_email
         msg['Subject'] = f"Nuevo contacto: {form_data.name}"
         
-        # Contenido
         cuerpo = f"""
         Nombre: {form_data.name} {form_data.lastName}
         Email: {form_data.email}
@@ -54,23 +56,21 @@ def enviar_email(form_data):
         
         msg.attach(MIMEText(cuerpo, 'plain'))
         
-        # Enviar
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()
             server.login(smtp_user, smtp_pass)
             server.send_message(msg)
         
+        print("✅ Email enviado exitosamente")
         return True
     except Exception as e:
-        print(f"Error email: {e}")
+        print(f"❌ Error email: {e}")
         return False
 
-# Endpoint principal
 @app.post("/api/contact/send")
 def send_contact(form_data: ContactForm):
     print(f"Datos recibidos: {form_data.name}, {form_data.email}")
     
-    # Enviar email
     if enviar_email(form_data):
         return {
             "success": True,
@@ -82,6 +82,12 @@ def send_contact(form_data: ContactForm):
             "message": "Error al enviar el email"
         }
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+@app.get("/")
+def home():
+    return {"message": "Backend funcionando"}
+
+@app.get("/api/health")
+def health():
+    return {"status": "ok"}
+
+# NO incluyas el if __name__ == "__main__" para Render

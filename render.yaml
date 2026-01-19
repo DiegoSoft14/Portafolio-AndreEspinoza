@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: portfolio-backend
+    env: python
+    rootDir: backend  # ¡IMPORTANTE! Así sabe dónde está tu código
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    healthCheckPath: /api/health
+    # NO pongas contraseñas aquí
+    # Las variables se configurarán MANUALMENTE en Render
